@@ -217,8 +217,8 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
 //*******************************************************************get_voltage************************************************
 // averages every 10 readings from a specified analog input pin
 void get_voltage() {        
-    L_voltage = avgByTen(L_voltage_pin);  //raw analog input data
-    R_voltage = avgByTen(R_voltage_pin);  // raw analog input data
+    L_voltage = avgByFifteen(L_voltage_pin);  //raw analog input data
+    R_voltage = avgByFifteen(R_voltage_pin);  // raw analog input data
     L_gen_volts = L_voltsCalc(L_voltage);  // scaled generator input voltage (10.1 : 1 divider)
     R_gen_volts = R_voltsCalc(R_voltage);  // scaled generator input voltage (10.2 : 1 divider)
 }
