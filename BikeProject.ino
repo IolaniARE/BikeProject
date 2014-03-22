@@ -225,10 +225,10 @@ void get_voltage() {
 //*****************************************************************end get_voltage************************************************
 
 //*******************************************************************get_current************************************************
-// averages every 10 readings from a specified analog input pin
+// averages every 15 readings from a specified analog input pin
 void get_current() {        
-    L_current = avgByTen(L_current_pin);
-    R_current = avgByTen(R_current_pin);
+    L_current = avgByFifteen(L_current_pin);
+    R_current = avgByFifteen(R_current_pin);
     L_gen_amps = currentCalc(L_current);
 //    R_gen_amps = R_voltsCalc(R_current); 
 }
@@ -265,14 +265,14 @@ void display_R_VP() {
 
 
 //*******************************************************************averaging************************************************
-// averages every 10 readings from a specified analog input pin
-float avgByTen(uint8_t pin) {        
+// averages every 15 readings from a specified analog input pin
+float avgByFifteen(uint8_t pin) {        
     int reading = 0;
-    for (int i=0; i<10; i++){
+    for (int i=0; i<15; i++){
         analogRead(pin); //arduino alalog in pin
         reading += analogRead(pin);
     }
-    return reading / 10;
+    return reading / 15;
 }
 //*****************************************************************end averaging************************************************
 
