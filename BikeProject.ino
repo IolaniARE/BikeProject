@@ -216,7 +216,7 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
 // functions are ordered by sequential use in void loop()
 
 //*******************************************************************get_voltage************************************************
-// averages every 10 readings from a specified analog input pin
+// averages every avgVal readings from a specified analog input pin
 void get_voltage() {        
     L_voltage = avg(avgVal, L_voltage_pin);  //raw analog input data
     R_voltage = avg(avgVal, R_voltage_pin);  // raw analog input data
@@ -226,7 +226,7 @@ void get_voltage() {
 //*****************************************************************end get_voltage************************************************
 
 //*******************************************************************get_current************************************************
-// averages every 15 readings from a specified analog input pin
+// averages every avgVal readings from a specified analog input pin
 void get_current() {        
     L_current = avg(avgVal, L_current_pin);
     R_current = avg(avgVal, R_current_pin);
