@@ -40,6 +40,7 @@ Adafruit_7segment R_whr_disp = Adafruit_7segment();
 
 // initialize the library with the numbers of the interface pins for lcd
 const float wh_limit = 1.5;
+const int avgVal = 15;
 
 boolean start_flag = false;
 int blinkState = LOW;
@@ -217,8 +218,8 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
 //*******************************************************************get_voltage************************************************
 // averages every 10 readings from a specified analog input pin
 void get_voltage() {        
-    L_voltage = avgByFifteen(L_voltage_pin);  //raw analog input data
-    R_voltage = avgByFifteen(R_voltage_pin);  // raw analog input data
+    L_voltage = avg(avgVal, L_voltage_pin);  //raw analog input data
+    R_voltage = avg(avgVal, R_voltage_pin);  // raw analog input data
     L_gen_volts = L_voltsCalc(L_voltage);  // scaled generator input voltage (10.1 : 1 divider)
     R_gen_volts = R_voltsCalc(R_voltage);  // scaled generator input voltage (10.2 : 1 divider)
 }
@@ -227,8 +228,8 @@ void get_voltage() {
 //*******************************************************************get_current************************************************
 // averages every 15 readings from a specified analog input pin
 void get_current() {        
-    L_current = avgByFifteen(L_current_pin);
-    R_current = avgByFifteen(R_current_pin);
+    L_current = avg(avgVal, L_current_pin);
+    R_current = avg(avgVal, R_current_pin);
     L_gen_amps = currentCalc(L_current);
 //    R_gen_amps = R_voltsCalc(R_current); 
 }
@@ -265,14 +266,14 @@ void display_R_VP() {
 
 
 //*******************************************************************averaging************************************************
-// averages every 15 readings from a specified analog input pin
-float avgByFifteen(uint8_t pin) {        
+// averages every total readings from a specified analog input pin
+float avg(int total, uint8_t pin) {        
     int reading = 0;
-    for (int i=0; i<15; i++){
+    for (int i = 0; i < total; i++){
         analogRead(pin); //arduino alalog in pin
         reading += analogRead(pin);
     }
-    return reading / 15;
+    return reading / total;
 }
 //*****************************************************************end averaging************************************************
 
