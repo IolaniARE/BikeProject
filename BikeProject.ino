@@ -250,8 +250,8 @@ void display_L_VP() {
  
  L_watts_disp.print(int(L_power));
  L_watts_disp.writeDisplay();
-
 }
+
 
 void display_R_VP() {
  R_volts_disp.printFloat(R_gen_volts, 2, 10);
@@ -334,9 +334,18 @@ void disp_Wh() {
     L_whr_disp.writeDisplay();
     L_whr_disp.writeDigitRaw(2, 0x02);   // center colon - cover top dot for decimal point
     L_whr_disp.writeDisplay();
-    
- 
     }
+
+  if (R_Wh>=0.00 && R_Wh<=0.09) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);  // void Adafruit_7segment::printFloat(double n, uint8_t fracDigits, uint8_t base) 
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(1, 0);  // leading zero in ones position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(3, 0);  //leading zero in tenths position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);   // center colon - cover top dot for decimal point
+    R_whr_disp.writeDisplay();
+     }
     
   if (L_Wh>=0.10 && L_Wh<=0.99) {
     L_whr_disp.printFloat(L_Wh, 2, 10);
@@ -346,12 +355,28 @@ void disp_Wh() {
     L_whr_disp.writeDigitRaw(2, 0x02);  // center colon - cover top dot for decimal point
     L_whr_disp.writeDisplay();
     }
-    
+
+  if (R_Wh>=0.10 && R_Wh<=0.99) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(1, 0);  // leading zero in ones position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);  // center colon - cover top dot for decimal point
+    R_whr_disp.writeDisplay();
+    }
+
   if (L_Wh>0.99) {
     L_whr_disp.printFloat(L_Wh, 2, 10);
     L_whr_disp.writeDisplay();
     L_whr_disp.writeDigitRaw(2, 0x02);
     L_whr_disp.writeDisplay();
+    }
+
+  if (R_Wh>0.99) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);
+    R_whr_disp.writeDisplay();
     }
 }
 
