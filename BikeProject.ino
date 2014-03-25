@@ -434,6 +434,31 @@ void load_test() {
   delay(1000);
   digitalWrite(L_winner, HIGH);
   delay(250);
+
+
+  R_mAh = milliamphourscalc(deltatime, R_gen_amps) + R_mAh;
+  R_Wh = watthourscalc(deltatime, R_power) + R_Wh; 
+  display_R_VP();  // display volts, current, power on left side 7-segment displays
+  digitalWrite(R_relay_1, LOW);  //turn-on level 1 load
+  delay(1000);
+  digitalWrite(R_relay_1, HIGH);
+  delay(250);
+  digitalWrite(R_relay_2, LOW);
+  delay(1000);
+  digitalWrite(R_relay_2, HIGH);
+  delay(250);
+  digitalWrite(R_relay_3, LOW);
+  delay(1000);
+  digitalWrite(R_relay_3, HIGH);
+  delay(250);
+  digitalWrite(R_relay_4, LOW);
+  delay(1000);
+  digitalWrite(R_relay_4, HIGH);
+  delay(250);
+  digitalWrite(R_winner, LOW);
+  delay(1000);
+  digitalWrite(R_winner, HIGH);
+  delay(250);
   
   
     get_voltage();
