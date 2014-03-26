@@ -68,10 +68,10 @@ uint16_t counter = 0;
 
 void setup() {
 
-//    L_volts_disp.begin(0x070);  // green
-//    L_watts_disp.begin(0x071);  // red
-//    L_whr_disp.begin(0x072);    // yellow
-   R_volts_disp.begin(0x073);  // green
+    L_volts_disp.begin(0x070);  // green
+    L_watts_disp.begin(0x071);  // red
+    L_whr_disp.begin(0x072);    // yellow
+    R_volts_disp.begin(0x073);  // green
     R_watts_disp.begin(0x074);  // red
     R_whr_disp.begin(0x075);    // yellow
     
