@@ -142,9 +142,18 @@ get_current();
 get_power();
 digitalWrite(L_gen_relay, HIGH);  // switch off left main relay if voltage out of spec ****ADD HYSTERESIS*****  so relay does not oscillate
 currentMillis = millis();
+digitalWrite(R_gen_relay, HIGH);  // switch off right main relay if voltage out of spec ****ADD HYSTERESIS*****  so relay does not oscillate
+currentMillis = millis();
 if(currentMillis - previousMillis > interval) {
         previousMillis = currentMillis;
         display_L_VP();
+        display_LCD();
+        disp_Wh();  // display Whr
+        }
+
+if(currentMillis - previousMillis > interval) {
+        previousMillis = currentMillis;
+        display_R_VP();
         display_LCD();
         disp_Wh();  // display Whr
         }
@@ -205,7 +214,67 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
         }
       }
     }
+  } 
+
+
+// energize main relays once either generator 13.0V<gen_volts<29.0V
+while((R_gen_volts >= 13.0  && R_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  so relay does not oscillate
+  digitalWrite(R_gen_relay, LOW);  // turn on main relay (active low)
+  get_voltage();
+  get_current();
+  get_power();
+//  display_R_VP();  // display volts, current, power on left side 7-segment displays
+  deltatime = millis() - time;
+  time = millis();
+  currentMillis = millis();  
+  // count Ah/Wh after game has started    
+  R_mAh = milliamphourscalc(deltatime, R_gen_amps) + R_mAh;
+  R_Wh = watthourscalc(deltatime, R_power) + R_Wh; 
+  
+  
+  if(currentMillis - previousMillis > interval) {
+        previousMillis = currentMillis;
+        display_R_VP();
+        display_LCD();
+        disp_Wh();  // display Whr
+        }
+  
+ 
+  
+  digitalWrite(R_relay_1, LOW);  //turn-on level 1 load
+    if(R_Wh >= 0.25) {
+      digitalWrite(R_relay_2, LOW);
+    }
+    if(R_Wh >= 0.75) {
+      digitalWrite(R_relay_3, LOW);
+    }
+    if(R_Wh >= 1.50) {
+      digitalWrite(R_relay_4, LOW);
+    }
+    if(R_Wh >= 2.00) {  //game over
+      digitalWrite(R_winner, LOW);
+      digitalWrite(R_relay_4, HIGH);
+      delay(2000);
+      digitalWrite(R_relay_3, HIGH);
+      delay(2000);
+      digitalWrite(R_relay_2, HIGH);
+      delay(2000);
+      digitalWrite(R_relay_1, HIGH);
+      digitalWrite(R_winner, HIGH);
+      while(1) {
+        get_voltage();
+        get_current();
+        get_power();
+        currentMillis = millis();
+        if(currentMillis - previousMillis > interval) {
+        previousMillis = currentMillis;
+        display_R_VP();
+        display_LCD();
+        }
+      }
+    }
   }  
+
 }
     
     
