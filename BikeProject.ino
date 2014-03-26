@@ -103,6 +103,10 @@ void setup() {
     digitalWrite(R_relay_3, HIGH);
     pinMode(R_relay_4, OUTPUT);
     digitalWrite(R_relay_4, HIGH);
+    pinMode(R_gen_relay, OUTPUT);
+    digitalWrite(R_gen_relay, HIGH);
+    pinMode(R_winner, OUTPUT);
+    digitalWrite(R_winner, HIGH);
     
     lcd.print("PowerMeter v2.0"); 
     lcd.setCursor(0,1);
