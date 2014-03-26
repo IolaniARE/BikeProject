@@ -68,10 +68,10 @@ uint16_t counter = 0;
 
 void setup() {
 
-    L_volts_disp.begin(0x070);  // green
-    L_watts_disp.begin(0x071);  // red
-    L_whr_disp.begin(0x072);    // yellow
-    R_volts_disp.begin(0x073);  // green
+//    L_volts_disp.begin(0x070);  // green
+//    L_watts_disp.begin(0x071);  // red
+//    L_whr_disp.begin(0x072);    // yellow
+   R_volts_disp.begin(0x073);  // green
     R_watts_disp.begin(0x074);  // red
     R_whr_disp.begin(0x075);    // yellow
     
@@ -141,22 +141,17 @@ get_voltage();
 get_current();
 get_power();
 digitalWrite(L_gen_relay, HIGH);  // switch off left main relay if voltage out of spec ****ADD HYSTERESIS*****  so relay does not oscillate
-currentMillis = millis();
 digitalWrite(R_gen_relay, HIGH);  // switch off right main relay if voltage out of spec ****ADD HYSTERESIS*****  so relay does not oscillate
 currentMillis = millis();
-if(currentMillis - previousMillis > interval) {
-        previousMillis = currentMillis;
-        display_L_VP();
-        display_LCD();
-        disp_Wh();  // display Whr
-        }
 
 if(currentMillis - previousMillis > interval) {
         previousMillis = currentMillis;
+        display_L_VP();
         display_R_VP();
         display_LCD();
         disp_Wh();  // display Whr
         }
+
 
 // energize main relays once either generator 13.0V<gen_volts<29.0V
 while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  so relay does not oscillate
@@ -202,7 +197,8 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
       delay(2000);
       digitalWrite(L_relay_1, HIGH);
       digitalWrite(L_winner, HIGH);
-      while(1) {
+  
+  while(1) {
         get_voltage();
         get_current();
         get_power();
@@ -476,10 +472,12 @@ void load_test() {
 // Test Code - cycle all relays one at a time for 1 second, test displays
   delay(2000);  
   digitalWrite(L_gen_relay, LOW);  // turn on main relay (active low)
+  digitalWrite(R_gen_relay, LOW);  // turn on main relay (active low)
   get_voltage();
   get_current();
   get_power();
   display_L_VP();
+  display_R_VP();
   currentMillis = millis();
   deltatime = millis() - time;
   time = millis();
