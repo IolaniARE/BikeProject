@@ -304,7 +304,7 @@ void get_current() {
     L_current = avg(avgVal, L_current_pin);
     R_current = avg(avgVal, R_current_pin);
     L_gen_amps = currentCalc(L_current);
-//    R_gen_amps = R_voltsCalc(R_current); 
+    R_gen_amps = R_voltsCalc(R_current); 
 }
 //*****************************************************************end get_current************************************************
 
