@@ -38,6 +38,9 @@ Adafruit_7segment R_whr_disp = Adafruit_7segment();
 #define sensitivity 66              // ACS712-30 current sensor  66mV/A
 #define ECHO_TO_SERIAL 1
 
+// initialize the library with the numbers of the interface pins for lcd
+const float wh_limit = 1.5;
+const int avgVal = 15;
 
 boolean start_flag = false;
 int blinkState = LOW;
@@ -138,8 +141,9 @@ get_voltage();
 get_current();
 get_power();
 digitalWrite(L_gen_relay, HIGH);  // switch off left main relay if voltage out of spec ****ADD HYSTERESIS*****  so relay does not oscillate
-digitalWrite(R_gen_relay, HIGH);  // switch off left main relay if voltage out of spec ****ADD HYSTERESIS*****  so relay does not oscillate
+digitalWrite(R_gen_relay, HIGH);  // switch off right main relay if voltage out of spec ****ADD HYSTERESIS*****  so relay does not oscillate
 currentMillis = millis();
+
 if(currentMillis - previousMillis > interval) {
         previousMillis = currentMillis;
         display_L_VP();
@@ -148,6 +152,7 @@ if(currentMillis - previousMillis > interval) {
         disp_L_Wh();
         disp_R_Wh();  // display Whr
         }
+
 
 // energize main relays once either generator 13.0V<gen_volts<29.0V
 while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  so relay does not oscillate
@@ -193,7 +198,8 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
       delay(2000);
       digitalWrite(L_relay_1, HIGH);
       digitalWrite(L_winner, HIGH);
-      while(1) {
+  
+  while(1) {
         get_voltage();
         get_current();
         get_power();
@@ -206,7 +212,67 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
         }
       }
     }
+  } 
+
+
+// energize main relays once either generator 13.0V<gen_volts<29.0V
+while((R_gen_volts >= 13.0  && R_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  so relay does not oscillate
+  digitalWrite(R_gen_relay, LOW);  // turn on main relay (active low)
+  get_voltage();
+  get_current();
+  get_power();
+//  display_R_VP();  // display volts, current, power on left side 7-segment displays
+  deltatime = millis() - time;
+  time = millis();
+  currentMillis = millis();  
+  // count Ah/Wh after game has started    
+  R_mAh = milliamphourscalc(deltatime, R_gen_amps) + R_mAh;
+  R_Wh = watthourscalc(deltatime, R_power) + R_Wh; 
+  
+  
+  if(currentMillis - previousMillis > interval) {
+        previousMillis = currentMillis;
+        display_R_VP();
+        display_LCD();
+        disp_Wh();  // display Whr
+        }
+  
+ 
+  
+  digitalWrite(R_relay_1, LOW);  //turn-on level 1 load
+    if(R_Wh >= 0.25) {
+      digitalWrite(R_relay_2, LOW);
+    }
+    if(R_Wh >= 0.75) {
+      digitalWrite(R_relay_3, LOW);
+    }
+    if(R_Wh >= 1.50) {
+      digitalWrite(R_relay_4, LOW);
+    }
+    if(R_Wh >= 2.00) {  //game over
+      digitalWrite(R_winner, LOW);
+      digitalWrite(R_relay_4, HIGH);
+      delay(2000);
+      digitalWrite(R_relay_3, HIGH);
+      delay(2000);
+      digitalWrite(R_relay_2, HIGH);
+      delay(2000);
+      digitalWrite(R_relay_1, HIGH);
+      digitalWrite(R_winner, HIGH);
+      while(1) {
+        get_voltage();
+        get_current();
+        get_power();
+        currentMillis = millis();
+        if(currentMillis - previousMillis > interval) {
+        previousMillis = currentMillis;
+        display_R_VP();
+        display_LCD();
+        }
+      }
+    }
   }  
+
 }
     
     
@@ -221,20 +287,20 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
 // functions are ordered by sequential use in void loop()
 
 //*******************************************************************get_voltage************************************************
-// averages every 10 readings from a specified analog input pin
+// averages every avgVal readings from a specified analog input pin
 void get_voltage() {        
-    L_voltage = avgByTen(L_voltage_pin);  //raw analog input data
-    R_voltage = avgByTen(R_voltage_pin);  // raw analog input data
+    L_voltage = avg(avgVal, L_voltage_pin);  //raw analog input data
+    R_voltage = avg(avgVal, R_voltage_pin);  // raw analog input data
     L_gen_volts = L_voltsCalc(L_voltage);  // scaled generator input voltage (10.1 : 1 divider)
     R_gen_volts = R_voltsCalc(R_voltage);  // scaled generator input voltage (10.2 : 1 divider)
 }
 //*****************************************************************end get_voltage************************************************
 
 //*******************************************************************get_current************************************************
-// averages every 10 readings from a specified analog input pin
+// averages every avgVal readings from a specified analog input pin
 void get_current() {        
-    L_current = avgByTen(L_current_pin);
-    R_current = avgByTen(R_current_pin);
+    L_current = avg(avgVal, L_current_pin);
+    R_current = avg(avgVal, R_current_pin);
     L_gen_amps = currentCalc(L_current);
     R_gen_amps = currentCalc(R_current); 
 }
@@ -255,8 +321,8 @@ void display_L_VP() {
  
  L_watts_disp.print(int(L_power));
  L_watts_disp.writeDisplay();
-
 }
+
 
 void display_R_VP() {
  R_volts_disp.printFloat(R_gen_volts, 2, 10);
@@ -271,14 +337,14 @@ void display_R_VP() {
 
 
 //*******************************************************************averaging************************************************
-// averages every 10 readings from a specified analog input pin
-float avgByTen(uint8_t pin) {        
+// averages every total readings from a specified analog input pin
+float avg(int total, uint8_t pin) {        
     int reading = 0;
-    for (int i=0; i<10; i++){
+    for (int i = 0; i < total; i++){
         analogRead(pin); //arduino alalog in pin
         reading += analogRead(pin);
     }
-    return reading / 10;
+    return reading / total;
 }
 //*****************************************************************end averaging************************************************
 
@@ -339,9 +405,18 @@ void disp_L_Wh() {
     L_whr_disp.writeDisplay();
     L_whr_disp.writeDigitRaw(2, 0x02);   // center colon - cover top dot for decimal point
     L_whr_disp.writeDisplay();
-    
- 
     }
+
+  if (R_Wh>=0.00 && R_Wh<=0.09) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);  // void Adafruit_7segment::printFloat(double n, uint8_t fracDigits, uint8_t base) 
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(1, 0);  // leading zero in ones position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(3, 0);  //leading zero in tenths position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);   // center colon - cover top dot for decimal point
+    R_whr_disp.writeDisplay();
+     }
     
   if (L_Wh>=0.10 && L_Wh<=0.99) {
     L_whr_disp.printFloat(L_Wh, 2, 10);
@@ -351,12 +426,28 @@ void disp_L_Wh() {
     L_whr_disp.writeDigitRaw(2, 0x02);  // center colon - cover top dot for decimal point
     L_whr_disp.writeDisplay();
     }
-    
+
+  if (R_Wh>=0.10 && R_Wh<=0.99) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(1, 0);  // leading zero in ones position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);  // center colon - cover top dot for decimal point
+    R_whr_disp.writeDisplay();
+    }
+
   if (L_Wh>0.99) {
     L_whr_disp.printFloat(L_Wh, 2, 10);
     L_whr_disp.writeDisplay();
     L_whr_disp.writeDigitRaw(2, 0x02);
     L_whr_disp.writeDisplay();
+    }
+
+  if (R_Wh>0.99) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);
+    R_whr_disp.writeDisplay();
     }
 }
 
@@ -430,10 +521,12 @@ void load_test() {
 // Test Code - cycle all relays one at a time for 1 second, test displays
   delay(2000);  
   digitalWrite(L_gen_relay, LOW);  // turn on main relay (active low)
+  digitalWrite(R_gen_relay, LOW);  // turn on main relay (active low)
   get_voltage();
   get_current();
   get_power();
   display_L_VP();
+  display_R_VP();
   currentMillis = millis();
   deltatime = millis() - time;
   time = millis();
@@ -460,6 +553,31 @@ void load_test() {
   digitalWrite(L_winner, LOW);
   delay(1000);
   digitalWrite(L_winner, HIGH);
+  delay(250);
+
+
+  R_mAh = milliamphourscalc(deltatime, R_gen_amps) + R_mAh;
+  R_Wh = watthourscalc(deltatime, R_power) + R_Wh; 
+  display_R_VP();  // display volts, current, power on left side 7-segment displays
+  digitalWrite(R_relay_1, LOW);  //turn-on level 1 load
+  delay(1000);
+  digitalWrite(R_relay_1, HIGH);
+  delay(250);
+  digitalWrite(R_relay_2, LOW);
+  delay(1000);
+  digitalWrite(R_relay_2, HIGH);
+  delay(250);
+  digitalWrite(R_relay_3, LOW);
+  delay(1000);
+  digitalWrite(R_relay_3, HIGH);
+  delay(250);
+  digitalWrite(R_relay_4, LOW);
+  delay(1000);
+  digitalWrite(R_relay_4, HIGH);
+  delay(250);
+  digitalWrite(R_winner, LOW);
+  delay(1000);
+  digitalWrite(R_winner, HIGH);
   delay(250);
   
   
