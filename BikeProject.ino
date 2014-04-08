@@ -149,7 +149,8 @@ if(currentMillis - previousMillis > interval) {
         display_L_VP();
         display_R_VP();
         display_LCD();
-        disp_Wh();  // display Whr
+        disp_L_Wh();
+        disp_R_Wh();  // display Whr
         }
 
 
@@ -159,7 +160,7 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
   get_voltage();
   get_current();
   get_power();
-//  display_L_VP();  // display volts, current, power on left side 7-segment displays
+  //  display_L_VP();  // display volts, current, power on left side 7-segment displays
   deltatime = millis() - time;
   time = millis();
   currentMillis = millis();  
@@ -206,6 +207,7 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
         if(currentMillis - previousMillis > interval) {
         previousMillis = currentMillis;
         display_L_VP();
+        display_R_VP();
         display_LCD();
         }
       }
@@ -300,7 +302,7 @@ void get_current() {
     L_current = avg(avgVal, L_current_pin);
     R_current = avg(avgVal, R_current_pin);
     L_gen_amps = currentCalc(L_current);
-    R_gen_amps = R_voltsCalc(R_current); 
+    R_gen_amps = currentCalc(R_current); 
 }
 //*****************************************************************end get_current************************************************
 
@@ -392,8 +394,8 @@ float watthourscalc(long deltatime, float power){
 //***************************************************************end watthours******************************************************
 
 
-//***************************************************************display Wh**********************************************************
-void disp_Wh() {
+//***************************************************************display L_Wh**********************************************************
+void disp_L_Wh() {
   if (L_Wh>=0.00 && L_Wh<=0.09) {
     L_whr_disp.printFloat(L_Wh, 2, 10);  // void Adafruit_7segment::printFloat(double n, uint8_t fracDigits, uint8_t base) 
     L_whr_disp.writeDisplay();
@@ -449,7 +451,43 @@ void disp_Wh() {
     }
 }
 
-//***************************************************************end display Wh**********************************************************
+//***************************************************************end display L_Wh**********************************************************
+
+
+//***************************************************************display R_Wh**********************************************************
+void disp_R_Wh() {
+  if (R_Wh>=0.00 && R_Wh<=0.09) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);  // void Adafruit_7segment::printFloat(double n, uint8_t fracDigits, uint8_t base) 
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(1, 0);  // leading zero in ones position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(3, 0);  //leading zero in tenths position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);   // center colon - cover top dot for decimal point
+    R_whr_disp.writeDisplay();
+    
+ 
+    }
+    
+  if (R_Wh>=0.10 && R_Wh<=0.99) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(1, 0);  // leading zero in ones position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);  // center colon - cover top dot for decimal point
+    R_whr_disp.writeDisplay();
+    }
+    
+  if (R_Wh>0.99) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);
+    R_whr_disp.writeDisplay();
+    }
+}
+
+//***************************************************************end display R_Wh**********************************************************
+
 
 
 //****************************************************************display_LCD**********************************************************
@@ -464,6 +502,17 @@ void display_LCD() {
     lcd.print(int (L_power));
     lcd.setCursor(0,3);
     lcd.print(L_Wh);
+    
+    lcd.setCursor(11,0);
+    lcd.print(R_gen_volts,1);
+    lcd.setCursor(11,1);
+    lcd.print(R_gen_amps,1);
+    lcd.setCursor(11,2);
+    lcd.print(int (R_power));
+    lcd.setCursor(11,3);
+    lcd.print(R_Wh);
+    
+    
 }
 //***************************************************************end display_LCD*******************************************************
 
