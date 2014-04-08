@@ -38,8 +38,6 @@ Adafruit_7segment R_whr_disp = Adafruit_7segment();
 #define sensitivity 66              // ACS712-30 current sensor  66mV/A
 #define ECHO_TO_SERIAL 1
 
-// initialize the library with the numbers of the interface pins for lcd
-const float wh_limit = 1.5;
 
 boolean start_flag = false;
 int blinkState = LOW;
@@ -102,6 +100,10 @@ void setup() {
     digitalWrite(R_relay_3, HIGH);
     pinMode(R_relay_4, OUTPUT);
     digitalWrite(R_relay_4, HIGH);
+    pinMode(R_gen_relay, OUTPUT);
+    digitalWrite(R_gen_relay, HIGH);
+    pinMode(R_winner, OUTPUT);
+    digitalWrite(R_winner, HIGH);
     
     lcd.print("PowerMeter v2.0"); 
     lcd.setCursor(0,1);
@@ -136,12 +138,15 @@ get_voltage();
 get_current();
 get_power();
 digitalWrite(L_gen_relay, HIGH);  // switch off left main relay if voltage out of spec ****ADD HYSTERESIS*****  so relay does not oscillate
+digitalWrite(R_gen_relay, HIGH);  // switch off left main relay if voltage out of spec ****ADD HYSTERESIS*****  so relay does not oscillate
 currentMillis = millis();
 if(currentMillis - previousMillis > interval) {
         previousMillis = currentMillis;
         display_L_VP();
+        display_R_VP();
         display_LCD();
-        disp_Wh();  // display Whr
+        disp_L_Wh();
+        disp_R_Wh();  // display Whr
         }
 
 // energize main relays once either generator 13.0V<gen_volts<29.0V
@@ -150,7 +155,7 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
   get_voltage();
   get_current();
   get_power();
-//  display_L_VP();  // display volts, current, power on left side 7-segment displays
+  //  display_L_VP();  // display volts, current, power on left side 7-segment displays
   deltatime = millis() - time;
   time = millis();
   currentMillis = millis();  
@@ -196,6 +201,7 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
         if(currentMillis - previousMillis > interval) {
         previousMillis = currentMillis;
         display_L_VP();
+        display_R_VP();
         display_LCD();
         }
       }
@@ -230,7 +236,7 @@ void get_current() {
     L_current = avgByTen(L_current_pin);
     R_current = avgByTen(R_current_pin);
     L_gen_amps = currentCalc(L_current);
-//    R_gen_amps = R_voltsCalc(R_current); 
+    R_gen_amps = currentCalc(R_current); 
 }
 //*****************************************************************end get_current************************************************
 
@@ -322,8 +328,8 @@ float watthourscalc(long deltatime, float power){
 //***************************************************************end watthours******************************************************
 
 
-//***************************************************************display Wh**********************************************************
-void disp_Wh() {
+//***************************************************************display L_Wh**********************************************************
+void disp_L_Wh() {
   if (L_Wh>=0.00 && L_Wh<=0.09) {
     L_whr_disp.printFloat(L_Wh, 2, 10);  // void Adafruit_7segment::printFloat(double n, uint8_t fracDigits, uint8_t base) 
     L_whr_disp.writeDisplay();
@@ -354,7 +360,43 @@ void disp_Wh() {
     }
 }
 
-//***************************************************************end display Wh**********************************************************
+//***************************************************************end display L_Wh**********************************************************
+
+
+//***************************************************************display R_Wh**********************************************************
+void disp_R_Wh() {
+  if (R_Wh>=0.00 && R_Wh<=0.09) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);  // void Adafruit_7segment::printFloat(double n, uint8_t fracDigits, uint8_t base) 
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(1, 0);  // leading zero in ones position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(3, 0);  //leading zero in tenths position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);   // center colon - cover top dot for decimal point
+    R_whr_disp.writeDisplay();
+    
+ 
+    }
+    
+  if (R_Wh>=0.10 && R_Wh<=0.99) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitNum(1, 0);  // leading zero in ones position
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);  // center colon - cover top dot for decimal point
+    R_whr_disp.writeDisplay();
+    }
+    
+  if (R_Wh>0.99) {
+    R_whr_disp.printFloat(R_Wh, 2, 10);
+    R_whr_disp.writeDisplay();
+    R_whr_disp.writeDigitRaw(2, 0x02);
+    R_whr_disp.writeDisplay();
+    }
+}
+
+//***************************************************************end display R_Wh**********************************************************
+
 
 
 //****************************************************************display_LCD**********************************************************
@@ -369,6 +411,17 @@ void display_LCD() {
     lcd.print(int (L_power));
     lcd.setCursor(0,3);
     lcd.print(L_Wh);
+    
+    lcd.setCursor(11,0);
+    lcd.print(R_gen_volts,1);
+    lcd.setCursor(11,1);
+    lcd.print(R_gen_amps,1);
+    lcd.setCursor(11,2);
+    lcd.print(int (R_power));
+    lcd.setCursor(11,3);
+    lcd.print(R_Wh);
+    
+    
 }
 //***************************************************************end display_LCD*******************************************************
 
