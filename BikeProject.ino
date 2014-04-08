@@ -173,7 +173,8 @@ if((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  
         previousMillis = currentMillis;
         display_L_VP();
         display_LCD();
-        disp_Wh();  // display Whr
+        disp_L_Wh();
+        disp_R_Wh();  // display Whr for left and right sides
         }
   
  
@@ -234,7 +235,8 @@ if((R_gen_volts >= 13.0  && R_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  
         previousMillis = currentMillis;
         display_R_VP();
         display_LCD();
-        disp_Wh();  // display Whr
+        disp_L_Wh();
+        disp_R_Wh();  // display Whr for left and right sides
         }
   
  
