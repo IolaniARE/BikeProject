@@ -155,7 +155,7 @@ if(currentMillis - previousMillis > interval) {
 
 
 // energize main relays once either generator 13.0V<gen_volts<29.0V
-while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  so relay does not oscillate
+if((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  so relay does not oscillate
   digitalWrite(L_gen_relay, LOW);  // turn on main relay (active low)
   get_voltage();
   get_current();
@@ -216,7 +216,7 @@ while((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS****
 
 
 // energize main relays once either generator 13.0V<gen_volts<29.0V
-while((R_gen_volts >= 13.0  && R_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  so relay does not oscillate
+if((R_gen_volts >= 13.0  && R_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  so relay does not oscillate
   digitalWrite(R_gen_relay, LOW);  // turn on main relay (active low)
   get_voltage();
   get_current();
