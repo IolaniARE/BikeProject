@@ -42,19 +42,19 @@ Adafruit_7segment R_whr_disp = Adafruit_7segment();
 const float wh_limit = 1.5;
 const int avgVal = 15;
 
-boolean start_flag = false;
+boolean game_start = false;
+boolean game_over = false;
 int blinkState = LOW;
 unsigned long currentMillis;
+long time_start = 0;
+long timer = 0;
 long time = 0;
 long deltatime = 0;
-long L_timer = 0;
-long L_previous;
-long R_timer = 0;
-long R_previous;
 long previousMillis = 0;
 long interval = 200;           
 float L_mAh, R_mAh;
-float L_Wh, R_Wh;
+float L_Wh = 0;
+float R_Wh = 0;
 float L_voltage, R_voltage;
 float L_gen_volts, R_gen_volts;
 float L_current, R_current;
@@ -111,7 +111,7 @@ void setup() {
     lcd.print("PowerMeter v2.0"); 
     lcd.setCursor(0,1);
     lcd.print("(c)2014 IOLANI");
-    delay(1000);
+    delay(200);
     lcd.clear();
     lcd.setCursor(7,0);
     lcd.print("V");
@@ -136,131 +136,121 @@ void setup() {
 //**************************************************loop****************************************************
 
 void loop() {
-    
-get_voltage();
-get_current();
-get_power();
-digitalWrite(L_gen_relay, HIGH);  // switch off left main relay if voltage out of spec ****ADD HYSTERESIS*****  so relay does not oscillate
-digitalWrite(R_gen_relay, HIGH);  // switch off right main relay if voltage out of spec ****ADD HYSTERESIS*****  so relay does not oscillate
-currentMillis = millis();
-
-if(currentMillis - previousMillis > interval) {
+    while (!game_start) {
+      get_voltage();
+      get_current();
+      get_power();
+      currentMillis = millis();
+      if(currentMillis - previousMillis > interval) {
         previousMillis = currentMillis;
-        display_L_VP();
         display_R_VP();
-        display_LCD();
-        disp_L_Wh();
-        disp_R_Wh();  // display Whr
-        }
-
-
-// energize main relays once either generator 13.0V<gen_volts<29.0V
-if((L_gen_volts >= 13.0  && L_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  so relay does not oscillate
-  digitalWrite(L_gen_relay, LOW);  // turn on main relay (active low)
-  get_voltage();
-  get_current();
-  get_power();
-  //  display_L_VP();  // display volts, current, power on left side 7-segment displays
-  deltatime = millis() - time;
-  time = millis();
-  currentMillis = millis();  
-  // count Ah/Wh after game has started    
-  L_mAh = milliamphourscalc(deltatime, L_gen_amps) + L_mAh;
-  L_Wh = watthourscalc(deltatime, L_power) + L_Wh; 
-  
-  
-  if(currentMillis - previousMillis > interval) {
-        previousMillis = currentMillis;
         display_L_VP();
-        display_LCD();
+        disp_R_Wh();
         disp_L_Wh();
-        disp_R_Wh();  // display Whr for left and right sides
+        display_LCD();
         }
-  
- 
-  
-  digitalWrite(L_relay_1, LOW);  //turn-on level 1 load
-    if(L_Wh >= 0.25) {
-      digitalWrite(L_relay_2, LOW);
-    }
-    if(L_Wh >= 0.75) {
-      digitalWrite(L_relay_3, LOW);
-    }
-    if(L_Wh >= 1.50) {
-      digitalWrite(L_relay_4, LOW);
-    }
-    if(L_Wh >= 2.00) {  //game over
-      digitalWrite(L_winner, LOW);
-      digitalWrite(L_relay_4, HIGH);
-      delay(2000);
-      digitalWrite(L_relay_3, HIGH);
-      delay(2000);
-      digitalWrite(L_relay_2, HIGH);
-      delay(2000);
-      digitalWrite(L_relay_1, HIGH);
-      digitalWrite(L_winner, HIGH);
-  
-  while(1) {
+        time_start = millis();
+      while((R_gen_volts >= 13.0  && R_gen_volts <= 29.0) && (L_gen_volts >= 13.0  && L_gen_volts <= 29.0)  && !game_start) {
         get_voltage();
         get_current();
         get_power();
         currentMillis = millis();
         if(currentMillis - previousMillis > interval) {
-        previousMillis = currentMillis;
-        display_L_VP();
-        display_R_VP();
-        display_LCD();
+          previousMillis = currentMillis;
+          display_R_VP();
+          display_L_VP();
+          disp_R_Wh();
+          disp_L_Wh();
+          display_LCD();
+        }
+        timer = millis()-time_start;
+        if(timer > 7000) {
+          game_start = true;
         }
       }
-    }
-  } 
+    }   
+      
+// committed to game start here
 
-
-// energize main relays once either generator 13.0V<gen_volts<29.0V
-if((R_gen_volts >= 13.0  && R_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  so relay does not oscillate
-  digitalWrite(R_gen_relay, LOW);  // turn on main relay (active low)
+while(game_start) {
   get_voltage();
   get_current();
   get_power();
-//  display_R_VP();  // display volts, current, power on left side 7-segment displays
+  
+  if(R_gen_volts <= 29.0) { 
+    digitalWrite(R_gen_relay, LOW);  // turn on main relay (active low)
+  }
+  else {
+    digitalWrite(R_gen_relay, HIGH);  // turn off main relay (active low)
+  }
+  
+  if(L_gen_volts <= 29.0) { 
+    digitalWrite(L_gen_relay, LOW);  // turn on main relay (active low)
+  }
+  else {
+    digitalWrite(L_gen_relay, HIGH);  // turn off main relay (active low)
+  }
+
+//  display_L_VP();  // display volts, current, power on left side 7-segment displays
   deltatime = millis() - time;
   time = millis();
   currentMillis = millis();  
   // count Ah/Wh after game has started    
   R_mAh = milliamphourscalc(deltatime, R_gen_amps) + R_mAh;
   R_Wh = watthourscalc(deltatime, R_power) + R_Wh; 
-  
+  L_mAh = milliamphourscalc(deltatime, L_gen_amps) + L_mAh;
+  L_Wh = watthourscalc(deltatime, L_power) + L_Wh; 
   
   if(currentMillis - previousMillis > interval) {
         previousMillis = currentMillis;
         display_R_VP();
+        display_L_VP();
+        disp_R_Wh();  // display Whr
+        disp_L_Wh();  // display Whr
         display_LCD();
-        disp_L_Wh();
-        disp_R_Wh();  // display Whr for left and right sides
         }
-  
- 
-  
-  digitalWrite(R_relay_1, LOW);  //turn-on level 1 load
+  digitalWrite(R_relay_1, LOW);  //turn-on right level 1 load
+  digitalWrite(L_relay_1, LOW);  //turn-on left level 1 load
+    
     if(R_Wh >= 0.25) {
       digitalWrite(R_relay_2, LOW);
     }
+    if(L_Wh >= 0.25) {
+      digitalWrite(L_relay_2, LOW);
+    }
+    
+    
     if(R_Wh >= 0.75) {
       digitalWrite(R_relay_3, LOW);
     }
+    if(L_Wh >= 0.75) {
+      digitalWrite(L_relay_3, LOW);
+    }
+    
+    
     if(R_Wh >= 1.50) {
       digitalWrite(R_relay_4, LOW);
     }
-    if(R_Wh >= 2.00) {  //game over
+    if(L_Wh >= 1.50) {
+      digitalWrite(L_relay_4, LOW);
+    }
+    
+    if((R_Wh >= 2.00) && (L_Wh <= 2.00)) {  //right player wins
+      game_over = true;
       digitalWrite(R_winner, LOW);
       digitalWrite(R_relay_4, HIGH);
+      digitalWrite(L_relay_4, HIGH);
       delay(2000);
       digitalWrite(R_relay_3, HIGH);
+      digitalWrite(L_relay_3, HIGH);
       delay(2000);
       digitalWrite(R_relay_2, HIGH);
+      digitalWrite(L_relay_2, HIGH);
       delay(2000);
       digitalWrite(R_relay_1, HIGH);
-      digitalWrite(R_winner, HIGH);
+      digitalWrite(L_relay_1, HIGH);
+    // dispense candy (drive one of the unused relays with low voltage (3V) DC/DC converter
+      digitalWrite(R_winner, LOW);
       while(1) {
         get_voltage();
         get_current();
@@ -273,15 +263,38 @@ if((R_gen_volts >= 13.0  && R_gen_volts <= 29.0)) {  //****ADD HYSTERESIS*****  
         }
       }
     }
+    
+    
+    if((L_Wh >= 2.00) && (R_Wh <= 2.00)) {  //right player wins
+      game_over = true;
+      digitalWrite(L_winner, LOW);
+      digitalWrite(R_relay_4, HIGH);
+      digitalWrite(L_relay_4, HIGH);
+      delay(2000);
+      digitalWrite(R_relay_3, HIGH);
+      digitalWrite(L_relay_3, HIGH);
+      delay(2000);
+      digitalWrite(R_relay_2, HIGH);
+      digitalWrite(L_relay_2, HIGH);
+      delay(2000);
+      digitalWrite(R_relay_1, HIGH);
+      digitalWrite(L_relay_1, HIGH);
+    // dispense candy (drive one of the unused relays with low voltage (3V) DC/DC converter
+      digitalWrite(L_winner, HIGH);
+      while(1) {
+        get_voltage();
+        get_current();
+        get_power();
+        currentMillis = millis();
+        if(currentMillis - previousMillis > interval) {
+        previousMillis = currentMillis;
+        display_R_VP();
+        display_LCD();
+        }
+      }
+    }  
   }  
-
 }
-    
-    
-    
-   
-   
-    
     
 
 //*****************************************************************end loop**************************************************
@@ -323,8 +336,8 @@ void display_L_VP() {
  
  L_watts_disp.print(int(L_power));
  L_watts_disp.writeDisplay();
-}
 
+}
 
 void display_R_VP() {
  R_volts_disp.printFloat(R_gen_volts, 2, 10);
@@ -407,18 +420,9 @@ void disp_L_Wh() {
     L_whr_disp.writeDisplay();
     L_whr_disp.writeDigitRaw(2, 0x02);   // center colon - cover top dot for decimal point
     L_whr_disp.writeDisplay();
+    
+ 
     }
-
-  if (R_Wh>=0.00 && R_Wh<=0.09) {
-    R_whr_disp.printFloat(R_Wh, 2, 10);  // void Adafruit_7segment::printFloat(double n, uint8_t fracDigits, uint8_t base) 
-    R_whr_disp.writeDisplay();
-    R_whr_disp.writeDigitNum(1, 0);  // leading zero in ones position
-    R_whr_disp.writeDisplay();
-    R_whr_disp.writeDigitNum(3, 0);  //leading zero in tenths position
-    R_whr_disp.writeDisplay();
-    R_whr_disp.writeDigitRaw(2, 0x02);   // center colon - cover top dot for decimal point
-    R_whr_disp.writeDisplay();
-     }
     
   if (L_Wh>=0.10 && L_Wh<=0.99) {
     L_whr_disp.printFloat(L_Wh, 2, 10);
@@ -428,28 +432,12 @@ void disp_L_Wh() {
     L_whr_disp.writeDigitRaw(2, 0x02);  // center colon - cover top dot for decimal point
     L_whr_disp.writeDisplay();
     }
-
-  if (R_Wh>=0.10 && R_Wh<=0.99) {
-    R_whr_disp.printFloat(R_Wh, 2, 10);
-    R_whr_disp.writeDisplay();
-    R_whr_disp.writeDigitNum(1, 0);  // leading zero in ones position
-    R_whr_disp.writeDisplay();
-    R_whr_disp.writeDigitRaw(2, 0x02);  // center colon - cover top dot for decimal point
-    R_whr_disp.writeDisplay();
-    }
-
+    
   if (L_Wh>0.99) {
     L_whr_disp.printFloat(L_Wh, 2, 10);
     L_whr_disp.writeDisplay();
     L_whr_disp.writeDigitRaw(2, 0x02);
     L_whr_disp.writeDisplay();
-    }
-
-  if (R_Wh>0.99) {
-    R_whr_disp.printFloat(R_Wh, 2, 10);
-    R_whr_disp.writeDisplay();
-    R_whr_disp.writeDigitRaw(2, 0x02);
-    R_whr_disp.writeDisplay();
     }
 }
 
@@ -555,31 +543,6 @@ void load_test() {
   digitalWrite(L_winner, LOW);
   delay(1000);
   digitalWrite(L_winner, HIGH);
-  delay(250);
-
-
-  R_mAh = milliamphourscalc(deltatime, R_gen_amps) + R_mAh;
-  R_Wh = watthourscalc(deltatime, R_power) + R_Wh; 
-  display_R_VP();  // display volts, current, power on left side 7-segment displays
-  digitalWrite(R_relay_1, LOW);  //turn-on level 1 load
-  delay(1000);
-  digitalWrite(R_relay_1, HIGH);
-  delay(250);
-  digitalWrite(R_relay_2, LOW);
-  delay(1000);
-  digitalWrite(R_relay_2, HIGH);
-  delay(250);
-  digitalWrite(R_relay_3, LOW);
-  delay(1000);
-  digitalWrite(R_relay_3, HIGH);
-  delay(250);
-  digitalWrite(R_relay_4, LOW);
-  delay(1000);
-  digitalWrite(R_relay_4, HIGH);
-  delay(250);
-  digitalWrite(R_winner, LOW);
-  delay(1000);
-  digitalWrite(R_winner, HIGH);
   delay(250);
   
   
