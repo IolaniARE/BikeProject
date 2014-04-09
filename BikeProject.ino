@@ -511,12 +511,10 @@ void load_test() {
 // Test Code - cycle all relays one at a time for 1 second, test displays
   delay(2000);  
   digitalWrite(L_gen_relay, LOW);  // turn on main relay (active low)
-  digitalWrite(R_gen_relay, LOW);  // turn on main relay (active low)
   get_voltage();
   get_current();
   get_power();
   display_L_VP();
-  display_R_VP();
   currentMillis = millis();
   deltatime = millis() - time;
   time = millis();
