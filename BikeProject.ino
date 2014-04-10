@@ -38,9 +38,6 @@ Adafruit_7segment R_whr_disp = Adafruit_7segment();
 #define sensitivity 66              // ACS712-30 current sensor  66mV/A
 #define ECHO_TO_SERIAL 1
 
-// initialize the library with the numbers of the interface pins for lcd
-const float wh_limit = 1.5;
-const int avgVal = 15;
 
 boolean game_start = false;
 boolean game_over = false;
@@ -302,20 +299,20 @@ while(game_start) {
 // functions are ordered by sequential use in void loop()
 
 //*******************************************************************get_voltage************************************************
-// averages every avgVal readings from a specified analog input pin
+// averages every 10 readings from a specified analog input pin
 void get_voltage() {        
-    L_voltage = avg(avgVal, L_voltage_pin);  //raw analog input data
-    R_voltage = avg(avgVal, R_voltage_pin);  // raw analog input data
+    L_voltage = avgByTen(L_voltage_pin);  //raw analog input data
+    R_voltage = avgByTen(R_voltage_pin);  // raw analog input data
     L_gen_volts = L_voltsCalc(L_voltage);  // scaled generator input voltage (10.1 : 1 divider)
     R_gen_volts = R_voltsCalc(R_voltage);  // scaled generator input voltage (10.2 : 1 divider)
 }
 //*****************************************************************end get_voltage************************************************
 
 //*******************************************************************get_current************************************************
-// averages every avgVal readings from a specified analog input pin
+// averages every 10 readings from a specified analog input pin
 void get_current() {        
-    L_current = avg(avgVal, L_current_pin);
-    R_current = avg(avgVal, R_current_pin);
+    L_current = avgByTen(L_current_pin);
+    R_current = avgByTen(R_current_pin);
     L_gen_amps = currentCalc(L_current);
     R_gen_amps = currentCalc(R_current); 
 }
@@ -352,14 +349,14 @@ void display_R_VP() {
 
 
 //*******************************************************************averaging************************************************
-// averages every total readings from a specified analog input pin
-float avg(int total, uint8_t pin) {        
+// averages every 10 readings from a specified analog input pin
+float avgByTen(uint8_t pin) {        
     int reading = 0;
-    for (int i = 0; i < total; i++){
+    for (int i=0; i<10; i++){
         analogRead(pin); //arduino alalog in pin
         reading += analogRead(pin);
     }
-    return reading / total;
+    return reading / 10;
 }
 //*****************************************************************end averaging************************************************
 
